@@ -4,7 +4,7 @@
 ' Exports SolidWorks drawings to DWG with only selected layers visible
 ' - Sheet 1 exports as: filename.dwg
 ' - Sheet 2 exports as: filenameFLO.dwg
-' - Bendlines (brown color) are hidden
+' - Bendlines optionally hidden (set HIDE_BENDLINES = True/False)
 ' ============================================================================
 
 Option Explicit
@@ -16,11 +16,8 @@ Private Const KEEP_LAYER_1 As String = "Drawing View 1"
 Private Const KEEP_LAYER_2 As String = "ETCH"
 ' Add more as needed (also update the LayerShouldBeKept function below)
 
-' Brown color for bendlines (SolidWorks color format)
-' Common brown values - adjust if needed
-Private Const BROWN_COLOR_1 As Long = 2573601  ' RGB(33, 66, 39) - SW brown
-Private Const BROWN_COLOR_2 As Long = 5921370  ' RGB(90, 75, 90) - darker
-Private Const BROWN_COLOR_3 As Long = 4486967  ' RGB(55, 104, 68) - bend line typical
+' Bendline hiding - Set to True to hide bendlines, False to skip
+Private Const HIDE_BENDLINES As Boolean = True
 ' ============================================================================
 
 Private swApp As SldWorks.SldWorks
@@ -76,7 +73,9 @@ Sub main()
     msg = msg & "Sheet naming:" & vbCrLf
     msg = msg & "  - Sheet 1 -> filename.dwg" & vbCrLf
     msg = msg & "  - Sheet 2 -> filenameFLO.dwg" & vbCrLf & vbCrLf
-    msg = msg & "Bendlines (brown) will be hidden" & vbCrLf & vbCrLf
+    If HIDE_BENDLINES Then
+        msg = msg & "Bendlines will be hidden" & vbCrLf & vbCrLf
+    End If
     msg = msg & "Output folder:" & vbCrLf & outputFolder & vbCrLf & vbCrLf
     msg = msg & "Continue with export?"
 
@@ -109,40 +108,6 @@ Private Function LayerShouldBeKept(layerName As String) As Boolean
     ' Add more conditions here if you have more layers to keep
     LayerShouldBeKept = (layerName = KEEP_LAYER_1) Or _
                         (layerName = KEEP_LAYER_2)
-End Function
-
-' Check if a color is brown (bendline color)
-Private Function IsBrownColor(colorVal As Long) As Boolean
-    ' Extract RGB components
-    Dim r As Long, g As Long, b As Long
-    r = colorVal Mod 256
-    g = (colorVal \ 256) Mod 256
-    b = (colorVal \ 65536) Mod 256
-
-    ' Check for brown-ish colors (R > G and R > B, with brown characteristics)
-    ' Brown typically has: high red, medium green, low blue
-    ' Adjust these thresholds if needed based on your specific brown
-
-    ' Method 1: Check against known brown values
-    If colorVal = BROWN_COLOR_1 Or colorVal = BROWN_COLOR_2 Or colorVal = BROWN_COLOR_3 Then
-        IsBrownColor = True
-        Exit Function
-    End If
-
-    ' Method 2: Check RGB ratio for brown-like colors
-    ' Brown: R is dominant, G is moderate, B is low
-    If r >= 100 And r <= 200 Then
-        If g >= 40 And g <= 120 Then
-            If b >= 0 And b <= 80 Then
-                If r > g And r > b Then
-                    IsBrownColor = True
-                    Exit Function
-                End If
-            End If
-        End If
-    End If
-
-    IsBrownColor = False
 End Function
 
 ' Process a single drawing file - returns number of successful exports
@@ -200,8 +165,10 @@ Private Function ProcessDrawing(filePath As String, outputFolder As String, fso 
             Next i
         End If
 
-        ' Hide brown colored entities (bendlines)
-        HideBrownEntities swDraw
+        ' Hide bendlines if enabled
+        If HIDE_BENDLINES Then
+            HideBendLines swDraw
+        End If
 
         ' Rebuild to apply changes
         swModel.ForceRebuild3 False
@@ -262,8 +229,8 @@ Private Function ExportSheetToDWG(swModel As SldWorks.ModelDoc2, swDraw As SldWo
                                                  saveErrors, saveWarnings)
 End Function
 
-' Hide entities that are brown colored (bendlines)
-Private Sub HideBrownEntities(swDraw As SldWorks.DrawingDoc)
+' Hide bendlines in drawing views
+Private Sub HideBendLines(swDraw As SldWorks.DrawingDoc)
     On Error Resume Next
 
     Dim swView As SldWorks.View
