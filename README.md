@@ -1,84 +1,58 @@
-# SolidWorks DWG Layer Exporter
+# SolidWorks DWG Layer Exporter & Image Generator
 
-A SolidWorks VBA macro that batch exports drawing files (.SLDDRW) to DWG format with selective layer visibility.
+A SolidWorks VBA macro that batch processes `.dwg` files to:
+1.  **Generate Preview Images:** Creates a high-quality PNG image of the drawing with *all layers visible*.
+2.  **Filter Layers:** Creates a clean copy of the DWG with only specific layers visible (default: "0" and "ETCH").
 
 ## Features
 
-- **Batch Processing**: Export multiple drawings at once from a folder
-- **Layer Filtering**: Keep only specified layers (default: "Drawing View 1" and "ETCH")
-- **Multi-Sheet Support**: Handles drawings with multiple sheets
-  - Sheet 1 → `filename.dwg`
-  - Sheet 2 → `filenameFLO.dwg`
-- **Bend Line Hiding**: Automatically hides sheet metal bend lines in exports
-- **Non-Destructive**: Original drawings are never modified
+- **Batch Processing:** Select a folder to process all `.dwg` files within it.
+- **Visual Verification:** Automatically exports a PNG preview (in `DWG_Images` folder) before hiding layers, perfect for quick visual checks.
+- **Layer Filtering:** Logic to keep "0" and "ETCH" layers visible while hiding others for the final production DWG (saved in `Filtered_DWGs`).
+- **Non-Destructive:** Original files are left untouched.
 
-## Quick Start
+## Installation & Usage
 
-### Installation
-
-1. Open SolidWorks
-2. Go to **Tools → Macro → New** and save as `DWGLayerExporter.swp`
-3. In the VBA Editor, go to **Tools → References** and enable:
-   - SolidWorks Type Library
-   - SolidWorks Constant Type Library
-4. Copy all code from `DWGLayerExporter_Simple.bas` into the module
-5. Save and close VBA Editor
-
-### Usage
-
-1. Run the macro: **Tools → Macro → Run → DWGLayerExporter.swp**
-2. Select the folder containing your `.SLDDRW` files
-3. Select the output folder for DWG files
-4. Confirm the export settings
-5. Wait for processing to complete
+1.  **Open SolidWorks**.
+2.  **Create the Macro:**
+    *   Go to **Tools > Macro > New...**
+    *   Save as `DWGLayerExporter.swp`.
+    *   Copy the code from `DWGLayerExporter_FinalVersion1.bas` into the macro editor.
+    *   Save and close the editor.
+3.  **Run the Macro:**
+    *   Go to **Tools > Macro > Run...** and select your macro.
+    *   **Select Folder:** A dialog will ask for the folder containing your source DWG files.
+4.  **Review Output:**
+    *   The macro creates two new subfolders in your selected directory:
+        *   `\DWG_Images\`: Contains PNG images of your parts (all layers visible).
+        *   `\Filtered_DWGs\`: Contains the final DWG files (only "0" and "ETCH" layers visible).
 
 ## Configuration
 
-### Changing Default Layers
-
-Edit these lines at the top of the macro:
-
-```vba
-Private Const KEEP_LAYER_1 As String = "Drawing View 1"
-Private Const KEEP_LAYER_2 As String = "ETCH"
-```
-
-To add more layers, add additional constants and update the `LayerShouldBeKept` function:
+### Changing Layer Rules
+To change which layers are kept visible, edit this section in `DWGLayerExporter_FinalVersion1.bas`:
 
 ```vba
-Private Function LayerShouldBeKept(layerName As String) As Boolean
-    LayerShouldBeKept = (layerName = KEEP_LAYER_1) Or _
-                        (layerName = KEEP_LAYER_2) Or _
-                        (layerName = "Your New Layer")
-End Function
+' Logic: If it's 0 or contains ETCH, Keep it visible. Otherwise, HIDE IT.
+If curName = "0" Or InStr(curName, "ETCH") > 0 Then
+    swLayer.Visible = True
+Else
+    swLayer.Visible = False
+End If
 ```
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `DWGLayerExporter_Simple.bas` | Main macro code (recommended) |
-| `DWGLayerExporter.swp.bas` | Full version with layer selection GUI |
-| `LayerSelectionForm.frm` | UserForm code for GUI version |
-| `INSTALLATION_INSTRUCTIONS.txt` | Detailed setup guide |
+| `DWGLayerExporter_FinalVersion1.bas` | The complete VBA macro source code. |
+| `README.md` | This documentation. |
 
 ## Requirements
 
-- SolidWorks (tested on 2020+)
+- SolidWorks
 - Windows OS
-
-## Troubleshooting
-
-**"SolidWorks is not running"**
-- Make sure SolidWorks is open before running the macro
-
-**"No SLDDRW files found"**
-- Verify the folder contains `.SLDDRW` files
-
-**Some files fail to export**
-- Files may be corrupted or currently open
-- Check the VBA Immediate Window (View → Immediate Window) for details
 
 ## License
 
-MIT License - Feel free to use and modify.
+MIT License
